@@ -5,7 +5,6 @@ MODE="${1:-release}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRIVER_SO="$SCRIPT_DIR/driver/vulkan.mali.so"
 DRIVER_DIR="$SCRIPT_DIR/driver"
-CONFIG_PROP="$SCRIPT_DIR/config/system.prop"
 
 if [ ! -f "$DRIVER_SO" ]; then
   echo "ERROR: Driver not found at $DRIVER_SO"
@@ -29,12 +28,34 @@ author=panvk-mtk
 description=PanVK (Mesa Vulkan kbase backend) system Vulkan driver replacement for Dimensity 8100 / Mali-G610 (Redmi Note 11T Pro / xaga).
 EOF
 
-if [ -f "$CONFIG_PROP" ]; then
-  cp "$CONFIG_PROP" "$MAGISK_ROOT/system.prop"
-fi
+# 仅保留经过实机验证的核心 6 个安全参数，坚决不触碰导致卡开机的 ro.surface_flinger 队列参数
+cat > "$MAGISK_ROOT/system.prop" <<EOF
+# panvk vulkan hwui & renderengine config
+debug.hwui.renderer=skiavk
+debug.renderengine.backend=skiagl
+debug.renderengine.vulkan=false
+debug.mesa.log.level=debug
+debug.mesa.vk.log=1
+debug.mesa.panvk.kbase.dvfs=none
+EOF
 
+# 仅替换红米 Note 11T Pro (mt6895) 的特定硬件驱动路径
 cp "$DRIVER_SO" "$MAGISK_ROOT/system/vendor/lib64/hw/mt6895/vulkan.mali.so"
-cp "$DRIVER_SO" "$MAGISK_ROOT/system/vendor/lib64/hw/vulkan.mali.so"
+
+# 修复 SELinux 标签与权限 (解决 same_process_hal_file 权限被拦截导致的卡开机)
+cat > "$MAGISK_ROOT/customize.sh" <<EOF
+ui_print "- 配置驱动文件权限与 SELinux 上下文..."
+set_perm_recursive "\$MODPATH" 0 0 0755 0644
+set_perm "\$MODPATH/system/vendor/lib64/hw/mt6895/vulkan.mali.so" 0 0 0644 "u:object_r:same_process_hal_file:s0"
+chcon u:object_r:same_process_hal_file:s0 "\$MODPATH/system/vendor/lib64/hw/mt6895/vulkan.mali.so" 2>/dev/null || true
+EOF
+
+cat > "$MAGISK_ROOT/post-fs-data.sh" <<EOF
+#!/system/bin/sh
+# 挂载后再次确保 SELinux 上下文正确
+chcon u:object_r:same_process_hal_file:s0 /vendor/lib64/hw/mt6895/vulkan.mali.so 2>/dev/null || true
+EOF
+chmod +x "$MAGISK_ROOT/post-fs-data.sh"
 
 cat > "$MAGISK_ROOT/META-INF/com/google/android/updater-script" <<EOF
 #MAGISK
@@ -65,7 +86,7 @@ mkdir -p "$STANDALONE_ROOT"
 
 cp "$DRIVER_SO" "$STANDALONE_ROOT/vulkan.mali.so"
 [ -f "$DRIVER_DIR/vulkan.mali.so.sha256" ] && cp "$DRIVER_DIR/vulkan.mali.so.sha256" "$STANDALONE_ROOT/"
-[ -f "$CONFIG_PROP" ] && cp "$CONFIG_PROP" "$STANDALONE_ROOT/"
+cp "$MAGISK_ROOT/system.prop" "$STANDALONE_ROOT/"
 [ -f "$SCRIPT_DIR/README.md" ] && cp "$SCRIPT_DIR/README.md" "$STANDALONE_ROOT/"
 
 cat > "$STANDALONE_ROOT/install.sh" <<EOF

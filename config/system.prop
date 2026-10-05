@@ -1,95 +1,14 @@
-# hwui use vulkan
-ro.hwui.use_vulkan=true
-
-# [skiavk] or [skiagl]
+# panvk vulkan hwui & renderengine config
+# HWUI 使用 Vulkan 进行 App 界面渲染
 debug.hwui.renderer=skiavk
 
-# preload OpenGL Context (SkiaGL Only), default is [false]
-debug.hwui.early_preload_gl_context=false
-
-# default is [true]
-renderthread.skia.reduceopstasksplitting=true
-
-# [default] or [lowram] or [extremelowram]
-debug.hwui.app_memory_policy=default
-
-# 0 ~ 4
-debug.hwui.level=0
-
-# Controls whether HWUI will send timing hints to HintManager for
-# better CPU scheduling. Accepted values are "true" and "false".
-# default is [false]
-debug.hwui.use_hint_manager=true
-
-# Percentage of frame time that's used for CPU work. The rest is
-# reserved for GPU work. This is used with use_hint_manager to
-# provide timing hints to HintManager. Accepted values are
-# integer from 1-100.
-# default is [70]
-debug.hwui.target_cpu_time_percent=70
-
-# Whether to initialize GL even when HWUI is running Vulkan.
-# Even though HWUI is rendering with Vulkan, some apps still use
-# GL. Preload GL driver just in case.  Since this happens prior to
-# forking from the zygote, apps that do not use GL are unaffected.
-# Any memory that (E)GL uses for this call is in shared memory,
-# and this call only happens once.
-debug.hwui.initialize_gl_always=true
-
-# Property for globally GL drawing state. Can be overridden per process with setDrawingEnabled.
-# isDrawingEnabled and enableRTAnimations follow this property.
-# default is [true]
-debug.hwui.drawing_enabled=true
-
-# I couldn't find it in the source code. It seems outdated?
-ro.hwui.render_ahead=3
-
-# [skiagl] [skiaglthreaded] [skiavk] [skiavkthreaded]
+# SurfaceFlinger 桌面图层合成使用 GL (利用 Mali 原生 blob 硬件解码 AFBC 图层，避免合成崩溃)
 debug.renderengine.backend=skiagl
-
-# graphite
-# debug.renderengine.graphite=false
-
-# vulkan
 debug.renderengine.vulkan=false
 
-# The prerequisite is "force_compile_graphite_renderengine"
-#  `dumpsys SurfaceFlinger | grep -i force_compile_graphite_renderengine`
-# debug.renderengine.graphite_preview_optin=true
-
-
-debug.renderengine.skia_atrace_enabled=false
-
-# [gaussian] or [kawase2] or [kawase], default is kawase
-# debug.renderengine.blur_algorithm=kawase
-
-# 
-debug.sf.enable_adpf_cpu_hint=false
-
-# persist.sys.limit_max_acquired_buffer_count=-1
-ro.surface_flinger.max_frame_buffer_acquired_buffers=3
-ro.surface_flinger.min_acquired_buffers=1
-
-# default is [false], Setting it to true will cause the UI to flicker.
-debug.sf.enable_layer_caching=false
-
-# default is [false]
-# ro.surface_flinger.refresh_rate_switching=false
-# ro.surface_flinger.set_idle_timer_ms=0
-# ro.surface_flinger.set_touch_timer_ms=0
-# ro.surface_flinger.set_display_power_timer_ms=0
-# ro.surface_flinger.use_content_detection_for_refresh_rate=false
-# ro.surface_flinger.use_smart_90_for_video=false
-# ro.surface_flinger.support_kernel_idle_timer=false
-# ro.surface_flinger.display_update_imminent_timeout_ms=0
-# ro.surface_flinger.enable_frame_rate_override=false
-# ro.surface_flinger.game_default_frame_rate_override=0
-
-# mesa debug
+# Mesa 与 PanVK 调试日志
 debug.mesa.log.level=debug
 debug.mesa.vk.log=1
 
-# kbase DVFS: none = keep MTK default (do not touch the governor).
-# Other values: auto (quickstep_use_mcu/capacity_use_mcu), default (quickstep),
-# max (lock max frequency), or a frequency in kHz.
+# kbase DVFS 保持 MTK 出厂默认
 debug.mesa.panvk.kbase.dvfs=none
