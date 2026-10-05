@@ -1,6 +1,7 @@
 # panvk vulkan hwui & renderengine config
-# HWUI 使用 Vulkan 进行 App 界面渲染
-debug.hwui.renderer=skiavk
+# HWUI 渲染器使用稳定的 skiagl (GL)，避免系统级 UI 因 panvk 尚不完善的 HardwareBitmap upload 产生 DEVICE_LOST 崩溃
+# 若需针对特定 App 测试 Vulkan HWUI，可通过开发者选项或独立命令单独指定
+debug.hwui.renderer=skiagl
 
 # SurfaceFlinger 桌面图层合成使用 GL (利用 Mali 原生 blob 硬件解码 AFBC 图层，避免合成崩溃)
 debug.renderengine.backend=skiagl

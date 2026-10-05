@@ -31,7 +31,7 @@ EOF
 # 仅保留经过实机验证的核心 6 个安全参数，坚决不触碰导致卡开机的 ro.surface_flinger 队列参数
 cat > "$MAGISK_ROOT/system.prop" <<EOF
 # panvk vulkan hwui & renderengine config
-debug.hwui.renderer=skiavk
+debug.hwui.renderer=skiagl
 debug.renderengine.backend=skiagl
 debug.renderengine.vulkan=false
 debug.mesa.log.level=debug
