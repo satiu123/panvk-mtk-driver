@@ -1,0 +1,159 @@
+name: Build PanVK MTK Driver
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build Type'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - release
+          - debug
+      create_release:
+        description: 'Create GitHub Release (for manual triggers)'
+        required: false
+        default: false
+        type: boolean
+      release_tag:
+        description: 'Release Tag name (optional, defaults to run number if manual)'
+        required: false
+        default: ''
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Driver (${{ github.event.inputs.build_type || 'release' }})
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        run: |
+          rustup default stable
+          rustup target add aarch64-linux-android
+          echo "Rust version: $(rustc --version)"
+          echo "Cargo version: $(cargo --version)"
+
+      - name: Cache bindgen binary
+        id: cache-bindgen
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/bindgen
+          key: ${{ runner.os }}-bindgen-0.72.1
+
+      - name: Install bindgen
+        if: steps.cache-bindgen.outputs.cache-hit != 'true'
+        run: |
+          cargo install --locked --version 0.72.1 bindgen-cli
+          ~/.cargo/bin/bindgen --version
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ninja-build pkg-config patchelf ccache \
+            clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libclang-rt-18-dev \
+            spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
+            libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
+            bison flex gettext xsltproc libwayland-dev zip
+
+      - name: Install Python Build Tools & Meson
+        run: |
+          pip3 install --break-system-packages --upgrade "meson>=1.7.0" mako packaging pyyaml
+          echo "Meson version: $(meson --version)"
+          python3 -c "import mako, packaging, yaml; print('Python deps OK')"
+
+      - name: Cache Android NDK
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          path: ~/panvk-mtk/android-ndk-r27c
+          key: ${{ runner.os }}-android-ndk-r27c
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ${{ runner.os }}-ccache-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-ccache-
+
+      - name: Build PanVK Driver
+        run: |
+          export SKIP_DEPS=1
+          export MODE="${{ github.event.inputs.build_type || 'release' }}"
+          bash build.sh "$MODE"
+
+      - name: Verify Driver Output
+        run: |
+          ls -la driver/vulkan.mali.so
+          file driver/vulkan.mali.so
+          readelf -h driver/vulkan.mali.so
+          readelf -d driver/vulkan.mali.so | grep -E "SONAME|NEEDED"
+          sha256sum driver/vulkan.mali.so | tee driver/vulkan.mali.so.sha256
+
+      - name: Package Release Assets
+        run: |
+          bash build-scripts/package_module.sh "${{ github.event.inputs.build_type || 'release' }}"
+          ls -lh driver/
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: panvk-mtk-driver-${{ github.event.inputs.build_type || 'release' }}
+          path: |
+            driver/vulkan.mali.so
+            driver/vulkan.mali.so.sha256
+            driver/Magisk-PanVK-MTK-*.zip
+            driver/Magisk-PanVK-MTK-*.zip.sha256
+            driver/panvk-mtk-driver-standalone-*.zip
+            driver/panvk-mtk-driver-standalone-*.zip.sha256
+          if-no-files-found: error
+
+      - name: Determine Release Tag
+        id: release_info
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [ -n "${{ github.event.inputs.release_tag }}" ]; then
+            TAG="${{ github.event.inputs.release_tag }}"
+          else
+            TAG="v1.0-build${{ github.run_number }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: PanVK MTK Driver ${{ steps.release_info.outputs.tag }}
+          draft: false
+          prerelease: ${{ github.event.inputs.build_type == 'debug' }}
+          generate_release_notes: true
+          files: |
+            driver/vulkan.mali.so
+            driver/vulkan.mali.so.sha256
+            driver/Magisk-PanVK-MTK-*.zip
+            driver/Magisk-PanVK-MTK-*.zip.sha256
+            driver/panvk-mtk-driver-standalone-*.zip
+            driver/panvk-mtk-driver-standalone-*.zip.sha256

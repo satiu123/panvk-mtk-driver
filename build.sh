@@ -26,22 +26,42 @@ OUT_DIR="$SCRIPT_DIR/driver"
 mkdir -p "$WORKDIR"
 
 # --- 1. 系统依赖 -----------------------------------------------------------
-echo "==> [1/6] 安装系统依赖"
-sudo apt-get update -y || true
-sudo apt-get install -y \
-  python3 python3-pip python3-setuptools python3-wheel ninja-build meson \
-  pkg-config git wget unzip curl \
-  clang llvm-18-dev libclang-18-dev libclang-cpp18-dev \
-  spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
-  libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
-  bison flex gettext xsltproc libwayland-dev \
-  rustc cargo libclang-rt-18-dev || true
+if [ "${SKIP_DEPS:-0}" != "1" ]; then
+  echo "==> [1/6] 安装系统依赖"
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -y || true
+    sudo apt-get install -y \
+      python3 python3-pip python3-setuptools python3-wheel ninja-build \
+      pkg-config git wget unzip curl patchelf \
+      clang llvm-18-dev libclang-18-dev libclang-cpp18-dev \
+      spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
+      libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
+      bison flex gettext xsltproc libwayland-dev \
+      libclang-rt-18-dev python3-mako python3-yaml python3-packaging || true
+  fi
 
-# rust android target
-rustup target add aarch64-linux-android 2>/dev/null || \
-  rustup target add aarch64-linux-android --toolchain stable 2>/dev/null || true
+  # 确保 pip 安装最新版 meson (>= 1.7.0 为 Mesa Rust 所需) 及 python 模板依赖
+  pip3 install --break-system-packages --upgrade "meson>=1.7.0" mako packaging pyyaml 2>/dev/null || \
+    pip3 install --upgrade "meson>=1.7.0" mako packaging pyyaml 2>/dev/null || true
 
-export PATH="/usr/lib/llvm-18/bin:$PATH:$HOME/.cargo/bin"
+  # 确保 Rust 工具链 (>= 1.85.0 为 Mesa 所需)
+  if ! command -v rustup >/dev/null 2>&1; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain stable
+  fi
+  [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
+  rustup default stable 2>/dev/null || true
+  rustup target add aarch64-linux-android 2>/dev/null || true
+
+  # 确保 bindgen (0.71.1 或 0.72.1 为 Mesa 所需)
+  export PATH="$HOME/.cargo/bin:$PATH"
+  if ! command -v bindgen >/dev/null 2>&1 || [ "$(bindgen --version 2>/dev/null | awk '{print $2}')" == "0.72.0" ]; then
+    echo "==> 安装 bindgen-cli 0.72.1"
+    cargo install --locked --version 0.72.1 bindgen-cli
+  fi
+fi
+
+[ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
+export PATH="$COMPILER_PREFIX/bin:$HOME/.cargo/bin:/usr/lib/llvm-18/bin:$PATH"
 export LIBCLANG_PATH=/usr/lib/llvm-18/lib
 export CLANG_PATH=/usr/lib/llvm-18/bin/clang
 export BINDGEN_EXTRA_CLANG_ARGS="-target aarch64-linux-android --sysroot=$WORKDIR/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
@@ -62,7 +82,7 @@ if [ ! -d "$WORKDIR/mesa/.git" ]; then
   git clone "$MESA_FORK_URL" "$WORKDIR/mesa"
 fi
 cd "$WORKDIR/mesa"
-git checkout "$MESA_COMMIT" 2>/dev/null || git fetch origin && git checkout "$MESA_COMMIT"
+git checkout "$MESA_COMMIT" 2>/dev/null || (git fetch origin && git checkout "$MESA_COMMIT")
 if ! git apply --check "$PATCH" 2>/dev/null; then
   # 补丁可能已应用, 检查后再决定
   if git apply --reverse --check "$PATCH" 2>/dev/null; then
@@ -176,8 +196,12 @@ echo "==> [6/6] 产出 vulkan.mali.so"
 SO="$WORKDIR/mesa/$BUILD_DIR/src/panfrost/vulkan/libvulkan_panfrost.so"
 mkdir -p "$OUT_DIR"
 cp "$SO" "$OUT_DIR/vulkan.mali.so"
+if [ "$MODE" = "release" ] && [ -f "$NDK_BIN/llvm-strip" ]; then
+  echo "==> 执行 llvm-strip --strip-unneeded"
+  "$NDK_BIN/llvm-strip" --strip-unneeded "$OUT_DIR/vulkan.mali.so"
+fi
 patchelf --set-soname vulkan.mali.so "$OUT_DIR/vulkan.mali.so"
 ls -la "$OUT_DIR/vulkan.mali.so"
-md5sum "$OUT_DIR/vulkan.mali.so"
+sha256sum "$OUT_DIR/vulkan.mali.so" | tee "$OUT_DIR/vulkan.mali.so.sha256"
 echo
 echo "构建完成: $OUT_DIR/vulkan.mali.so"

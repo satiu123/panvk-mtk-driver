@@ -44,9 +44,20 @@
 
 ## 构建
 
-环境:WSL2 Ubuntu 24.04,NDK r27c,离线编译工具链。
+环境: GitHub Actions (Ubuntu 24.04 runner), 或 WSL2 / 原生 Ubuntu 24.04 (NDK r27c)。
 
-### 一键构建(推荐)
+### 0. GitHub Actions 自动编译 (推荐，免本地配置)
+
+本项目已配置完整的 GitHub Actions CI 工作流(`.github/workflows/build.yml`):
+- **触发方式**:
+  - 推送代码到 `main` 分支或创建版本标签(如 `v1.0`)时自动触发构建。
+  - 在 GitHub 仓库页面的 **Actions** 选项卡 -> **Build PanVK MTK Driver** -> **Run workflow** 手动触发，支持选择 `release` / `debug` 模式，以及是否自动创建 GitHub Release。
+- **产物与交付物**:
+  - `vulkan.mali.so` 与 SHA256 校验和。
+  - `Magisk-PanVK-MTK-<MODE>.zip`: 支持直接在 **KernelSU / Magisk / APatch** 管理器中刷入的模块包(自动无损 systemless 覆盖驱动并注入 `system.prop` 参数，免去手动 remount 根分区风险)。
+  - `panvk-mtk-driver-standalone-<MODE>.zip`: 独立安装包，附带 Windows (`install.bat`) 和 Linux/macOS (`install.sh`) 的一键 ADB 部署脚本。
+
+### 1. 本地一键构建
 
 仓库根目录的 `build.sh` 自动完成:安装依赖 → 下载 NDK → 克隆基础 Mesa 源码
 (funnymdzz/mesa @ `6598829019c`) → 应用补丁 → 构建离线编译器 → 交叉编译

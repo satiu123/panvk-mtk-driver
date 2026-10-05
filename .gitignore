@@ -1,0 +1,18 @@
+# Build directories and artifacts
+/build/
+/build-compiler/
+/build-kbase-android/
+/build-kbase-android-debug/
+/mesa-compiler/
+/android-ndk-*/
+/ndk.zip
+
+# Driver packages and temporary checksums
+driver/*.zip
+driver/*.sha256
+
+# Editor and temporary files
+*~
+*.swp
+*.bak
+.DS_Store
