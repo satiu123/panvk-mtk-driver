@@ -48,11 +48,25 @@ ui_print "- 配置驱动文件权限与 SELinux 上下文..."
 set_perm_recursive "\$MODPATH" 0 0 0755 0644
 set_perm "\$MODPATH/system/vendor/lib64/hw/mt6895/vulkan.mali.so" 0 0 0644 "u:object_r:same_process_hal_file:s0"
 chcon u:object_r:same_process_hal_file:s0 "\$MODPATH/system/vendor/lib64/hw/mt6895/vulkan.mali.so" 2>/dev/null || true
+
+# 若检测到 Hybrid Mount 元模块，自动为其配置 magic 挂载模式，防止 overlayfs 污染 /vendor/lib64 导致 gralloc 丢失
+if [ -x /data/adb/modules/hybrid_mount/hybrid-mount ]; then
+  ui_print "- 检测到 Hybrid Mount，配置 magic 单文件绑定挂载模式..."
+  /data/adb/modules/hybrid_mount/hybrid-mount save-config --payload 7b2272756c6573223a207b2270616e766b5f6d746b5f647269766572223a207b2264656661756c745f6d6f6465223a20226d61676963222c20227061746873223a207b7d7d7d7d 2>/dev/null || true
+fi
+for HM_CONF in /data/adb/modules/hybrid_mount/config.toml /data/adb/hybrid-mount/config.toml; do
+  if [ -f "\$HM_CONF" ]; then
+    if ! grep -q "\[rules.panvk_mtk_driver\]" "\$HM_CONF"; then
+      printf '\n[rules.panvk_mtk_driver]\ndefault_mode = "magic"\n' >> "\$HM_CONF"
+    fi
+  fi
+done
 EOF
 
 cat > "$MAGISK_ROOT/post-fs-data.sh" <<EOF
 #!/system/bin/sh
-# 挂载后再次确保 SELinux 上下文正确
+MODDIR="\${0%/*}"
+chcon u:object_r:same_process_hal_file:s0 "\$MODDIR/system/vendor/lib64/hw/mt6895/vulkan.mali.so" 2>/dev/null || true
 chcon u:object_r:same_process_hal_file:s0 /vendor/lib64/hw/mt6895/vulkan.mali.so 2>/dev/null || true
 EOF
 chmod +x "$MAGISK_ROOT/post-fs-data.sh"
