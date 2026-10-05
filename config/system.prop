@@ -1,11 +1,7 @@
 # panvk vulkan hwui & renderengine config
-# 启用 Vulkan HWUI 进行界面渲染
-ro.hwui.use_vulkan=true
-debug.hwui.renderer=skiavk
-
-# 兼容性设置：预加载 GL 避免部分依赖 GL 上下文的组件异常
-debug.hwui.early_preload_gl_context=false
-debug.hwui.initialize_gl_always=true
+# HWUI 渲染器使用稳定的 skiagl (GL)，避免系统级 UI 因 panvk 尚不完善的 HardwareBitmap upload 产生渲染花屏或崩溃
+# 游戏、模拟器和 Vulkan 独立应用仍直接调用 PanVK (Vulkan 1.4)
+debug.hwui.renderer=skiagl
 
 # SurfaceFlinger 桌面图层合成使用 GL (利用 Mali 原生 blob 硬件解码 AFBC 图层，避免合成崩溃)
 debug.renderengine.backend=skiagl
@@ -15,5 +11,5 @@ debug.renderengine.vulkan=false
 debug.mesa.log.level=debug
 debug.mesa.vk.log=1
 
-# kbase 调速器策略锁定最高频，减少低频切换导致的 CSF 超时挂起
-debug.mesa.panvk.kbase.dvfs=max
+# kbase DVFS 保持 MTK 出厂默认
+debug.mesa.panvk.kbase.dvfs=none
