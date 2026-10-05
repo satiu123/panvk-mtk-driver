@@ -28,15 +28,18 @@ author=panvk-mtk
 description=PanVK (Mesa Vulkan kbase backend) system Vulkan driver replacement for Dimensity 8100 / Mali-G610 (Redmi Note 11T Pro / xaga).
 EOF
 
-# 仅保留经过实机验证的核心 6 个安全参数，坚决不触碰导致卡开机的 ro.surface_flinger 队列参数
+# 仅保留经过实机验证的核心安全参数，坚决不触碰导致卡开机的 ro.surface_flinger 队列参数
 cat > "$MAGISK_ROOT/system.prop" <<EOF
 # panvk vulkan hwui & renderengine config
-debug.hwui.renderer=skiagl
+ro.hwui.use_vulkan=true
+debug.hwui.renderer=skiavk
+debug.hwui.early_preload_gl_context=false
+debug.hwui.initialize_gl_always=true
 debug.renderengine.backend=skiagl
 debug.renderengine.vulkan=false
 debug.mesa.log.level=debug
 debug.mesa.vk.log=1
-debug.mesa.panvk.kbase.dvfs=none
+debug.mesa.panvk.kbase.dvfs=max
 EOF
 
 # 仅替换红米 Note 11T Pro (mt6895) 的特定硬件驱动路径
