@@ -1,5 +1,5 @@
 diff --git a/src/panfrost/lib/kmod/kbase_kmod.c b/src/panfrost/lib/kmod/kbase_kmod.c
-index 9dfcb25132c..595d7956e73 100644
+index 9dfcb25..595d795 100644
 --- a/src/panfrost/lib/kmod/kbase_kmod.c
 +++ b/src/panfrost/lib/kmod/kbase_kmod.c
 @@ -364,10 +364,15 @@ kbase_dev_query_props(struct kbase_kmod_dev *kbase_dev,
@@ -55,7 +55,7 @@ index 9dfcb25132c..595d7956e73 100644
  
     kbase_bo->same_va = (alloc_flags & BASE_MEM_SAME_VA) != 0;
 diff --git a/src/panfrost/lib/kmod/pan_kmod.c b/src/panfrost/lib/kmod/pan_kmod.c
-index 1e6ca23c833..6a03d3048b8 100644
+index 1e6ca23..6a03d30 100644
 --- a/src/panfrost/lib/kmod/pan_kmod.c
 +++ b/src/panfrost/lib/kmod/pan_kmod.c
 @@ -5,6 +5,7 @@
@@ -102,7 +102,7 @@ index 1e6ca23c833..6a03d3048b8 100644
        }
  
 diff --git a/src/panfrost/lib/pan_desc.c b/src/panfrost/lib/pan_desc.c
-index 2f049270a17..529656c2a49 100644
+index 2f04927..529656c 100644
 --- a/src/panfrost/lib/pan_desc.c
 +++ b/src/panfrost/lib/pan_desc.c
 @@ -278,6 +278,11 @@ get_afbc_att_mem_props(struct pan_image_plane_ref pref, unsigned mip_level,
@@ -140,7 +140,7 @@ index 2f049270a17..529656c2a49 100644
         * compression mode select the actual size.
         */
 diff --git a/src/panfrost/lib/pan_layout.c b/src/panfrost/lib/pan_layout.c
-index b0114493623..bb5d4a6ea4a 100644
+index b011449..bb5d4a6 100644
 --- a/src/panfrost/lib/pan_layout.c
 +++ b/src/panfrost/lib/pan_layout.c
 @@ -66,6 +66,9 @@ pan_image_layout_init(
@@ -154,7 +154,7 @@ index b0114493623..bb5d4a6ea4a 100644
     assert(plane_idx < ARRAY_SIZE(image->planes) &&
            plane_idx < util_format_get_num_planes(image->props.format));
 diff --git a/src/panfrost/lib/pan_mod.c b/src/panfrost/lib/pan_mod.c
-index 0424a7670dd..eb92dea351a 100644
+index 0424a76..eb92dea 100644
 --- a/src/panfrost/lib/pan_mod.c
 +++ b/src/panfrost/lib/pan_mod.c
 @@ -164,6 +164,11 @@ pan_mod_afbc_init_slice_layout(
@@ -170,7 +170,7 @@ index 0424a7670dd..eb92dea351a 100644
        body_offset_B + ((uint64_t)surface_stride_sb * afbc_tile_payload_size_B);
  
 diff --git a/src/panfrost/vulkan/csf/panvk_vX_gpu_queue.c b/src/panfrost/vulkan/csf/panvk_vX_gpu_queue.c
-index 552ce50d8c0..0e69a3d61ec 100644
+index 552ce50..0e69a3d 100644
 --- a/src/panfrost/vulkan/csf/panvk_vX_gpu_queue.c
 +++ b/src/panfrost/vulkan/csf/panvk_vX_gpu_queue.c
 @@ -58,7 +58,7 @@
@@ -248,7 +248,7 @@ index 552ce50d8c0..0e69a3d61ec 100644
     return result;
  }
 diff --git a/src/panfrost/vulkan/meson.build b/src/panfrost/vulkan/meson.build
-index 36589235e6f..330feed9e8c 100644
+index 3658923..330feed 100644
 --- a/src/panfrost/vulkan/meson.build
 +++ b/src/panfrost/vulkan/meson.build
 @@ -64,6 +64,7 @@ libpanvk_files = files(
@@ -259,29 +259,8 @@ index 36589235e6f..330feed9e8c 100644
  )
  libpanvk_files += [sha1_h]
  
-diff --git a/src/panfrost/vulkan/panvk_drm_stub.c b/src/panfrost/vulkan/panvk_drm_stub.c
-new file mode 100644
-index 00000000000..f6700ea9039
---- /dev/null
-+++ b/src/panfrost/vulkan/panvk_drm_stub.c
-@@ -0,0 +1,15 @@
-+#include <stdint.h>
-+#include <sys/ioctl.h>
-+#include <drm/drm.h>
-+#include <xf86drm.h>
-+
-+__attribute__((visibility("default")))
-+int
-+drmCloseBufferHandle(int fd, uint32_t handle)
-+{
-+   struct drm_gem_close req = {
-+      .handle = handle,
-+      .pad = 0,
-+   };
-+   return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &req);
-+}
 diff --git a/src/panfrost/vulkan/panvk_android.c b/src/panfrost/vulkan/panvk_android.c
-index 82f9638c8ea..347045ce94c 100644
+index 82f9638..347045c 100644
 --- a/src/panfrost/vulkan/panvk_android.c
 +++ b/src/panfrost/vulkan/panvk_android.c
 @@ -150,6 +150,10 @@ panvk_android_create_gralloc_image(VkDevice device,
@@ -339,35 +318,65 @@ index 82f9638c8ea..347045ce94c 100644
     VkResult result;
  
     VkImage img_handle = VK_NULL_HANDLE;
+diff --git a/src/panfrost/vulkan/panvk_drm_stub.c b/src/panfrost/vulkan/panvk_drm_stub.c
+new file mode 100644
+index 0000000..393b7c4
+--- /dev/null
++++ b/src/panfrost/vulkan/panvk_drm_stub.c
+@@ -0,0 +1,15 @@
++#include <stdint.h>
++#include <sys/ioctl.h>
++#include <drm/drm.h>
++#include <xf86drm.h>
++
++__attribute__((visibility("default")))
++int
++drmCloseBufferHandle(int fd, uint32_t handle)
++{
++   struct drm_gem_close req = {
++      .handle = handle,
++      .pad = 0,
++   };
++   return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &req);
++}
 diff --git a/src/panfrost/vulkan/panvk_image.c b/src/panfrost/vulkan/panvk_image.c
-index 892f3014fbf..f17404acb1d 100644
+index 892f301..1dd4579 100644
 --- a/src/panfrost/vulkan/panvk_image.c
 +++ b/src/panfrost/vulkan/panvk_image.c
-@@ -324,7 +324,22 @@ panvk_image_get_explicit_mod(
+@@ -324,7 +324,31 @@ panvk_image_get_explicit_mod(
     assert(image->vk.samples == 1);
     assert(image->vk.array_layers == 1);
     assert(image->vk.image_type != VK_IMAGE_TYPE_3D);
 -   assert(panvk_image_can_use_mod(image, iusage, mod, false));
 +
-+   /* MediaTek gralloc reports DRM_FORMAT_MOD_INVALID for AHardwareBuffer
-+    * images but allocates them as ARM AFBC (32x8 sparse/split/YTR). */
++   /* MediaTek gralloc reports DRM_FORMAT_MOD_INVALID for some external images.
++    * Only promote to MTK AFBC if it is used as a color attachment (render target).
++    * Ordinary sampled images / CPU textures must stay LINEAR.
++    */
 +   if (mod == DRM_FORMAT_MOD_INVALID ||
 +       !panvk_image_can_use_mod(image, iusage, mod, false)) {
-+      mesa_logw("panvk: explicit mod 0x%llx unusable, trying MTK AFBC",
-+                (unsigned long long)mod);
-+      mod = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
-+                                    AFBC_FORMAT_MOD_SPARSE |
-+                                    AFBC_FORMAT_MOD_SPLIT |
-+                                    AFBC_FORMAT_MOD_YTR);
-+      if (!panvk_image_can_use_mod(image, iusage, mod, false)) {
-+         mesa_logw("panvk: MTK AFBC unusable, using LINEAR");
++      if ((image->vk.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) &&
++          panvk_image_can_use_mod(image, iusage,
++             DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
++                                     AFBC_FORMAT_MOD_SPARSE |
++                                     AFBC_FORMAT_MOD_SPLIT |
++                                     AFBC_FORMAT_MOD_YTR), false)) {
++         mesa_logw("panvk: explicit mod 0x%llx unusable, using MTK AFBC for RT",
++                   (unsigned long long)mod);
++         mod = DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
++                                       AFBC_FORMAT_MOD_SPARSE |
++                                       AFBC_FORMAT_MOD_SPLIT |
++                                       AFBC_FORMAT_MOD_YTR);
++      } else {
++         mesa_logw("panvk: explicit mod 0x%llx unusable, fallback to LINEAR",
++                   (unsigned long long)mod);
 +         mod = DRM_FORMAT_MOD_LINEAR;
 +      }
 +   }
  
     return mod;
  }
-@@ -453,9 +468,35 @@ panvk_image_init_layouts(struct panvk_image *image,
+@@ -453,9 +477,35 @@ panvk_image_init_layouts(struct panvk_image *image,
           pCreateInfo->pNext,
           IMAGE_DRM_FORMAT_MODIFIER_EXPLICIT_CREATE_INFO_EXT);
  
@@ -403,7 +412,7 @@ index 892f3014fbf..f17404acb1d 100644
     /* initialize pan_image props and mod_handler */
     if (panvk_image_use_yuv_tex(arch, image->vk.format)) {
        const enum pipe_format pfmt = vk_format_to_pipe_format(image->vk.format);
-@@ -491,12 +532,23 @@ panvk_image_init_layouts(struct panvk_image *image,
+@@ -491,12 +541,23 @@ panvk_image_init_layouts(struct panvk_image *image,
        struct pan_image *pan_img = PAN_IMAGE_FROM(arch, image, plane);
        const uint8_t pan_plane = PAN_IMAGE_PLANE_INDEX_FROM(arch, image, plane);
  
@@ -428,7 +437,7 @@ index 892f3014fbf..f17404acb1d 100644
           plane_layout.offset_B += image->planes[plane].plane.layout.data_size_B;
     }
 diff --git a/src/panfrost/vulkan/panvk_physical_device.c b/src/panfrost/vulkan/panvk_physical_device.c
-index 8293e04db54..89bd21fd739 100644
+index 8293e04..89bd21f 100644
 --- a/src/panfrost/vulkan/panvk_physical_device.c
 +++ b/src/panfrost/vulkan/panvk_physical_device.c
 @@ -882,6 +882,33 @@ kbase_cpu_sync_move(UNUSED struct vk_device *device, struct vk_sync *dst,
@@ -490,7 +499,7 @@ index 8293e04db54..89bd21fd739 100644
     return result;
  }
 diff --git a/src/panfrost/vulkan/panvk_vX_device.c b/src/panfrost/vulkan/panvk_vX_device.c
-index f4f5c7f6504..5eab9aa042d 100644
+index f4f5c7f..5eab9aa 100644
 --- a/src/panfrost/vulkan/panvk_vX_device.c
 +++ b/src/panfrost/vulkan/panvk_vX_device.c
 @@ -448,10 +448,12 @@ panvk_per_arch(create_device)(struct panvk_physical_device *physical_device,
@@ -542,7 +551,7 @@ index f4f5c7f6504..5eab9aa042d 100644
        goto err_destroy_kdev;
     }
 diff --git a/src/panfrost/vulkan/panvk_vX_physical_device.c b/src/panfrost/vulkan/panvk_vX_physical_device.c
-index 0ffd1507403..4258aae9232 100644
+index 0ffd150..4258aae 100644
 --- a/src/panfrost/vulkan/panvk_vX_physical_device.c
 +++ b/src/panfrost/vulkan/panvk_vX_physical_device.c
 @@ -294,10 +294,11 @@ panvk_per_arch(get_physical_device_features)(
@@ -648,7 +657,7 @@ index 0ffd1507403..4258aae9232 100644
        /* Vulkan 1.1 */
        .storageBuffer16BitAccess = true,
 diff --git a/src/panfrost/vulkan/panvk_vX_shader.c b/src/panfrost/vulkan/panvk_vX_shader.c
-index 36a8b06aa56..f18da2a56d1 100644
+index 36a8b06..f18da2a 100644
 --- a/src/panfrost/vulkan/panvk_vX_shader.c
 +++ b/src/panfrost/vulkan/panvk_vX_shader.c
 @@ -2716,10 +2716,10 @@ panvk_cmd_bind_shader(struct panvk_cmd_buffer *cmd, const mesa_shader_stage stag
@@ -667,7 +676,7 @@ index 36a8b06aa56..f18da2a56d1 100644
  
  static void
 diff --git a/src/vulkan/runtime/vk_android.c b/src/vulkan/runtime/vk_android.c
-index fd9ee5d215e..b0195601ef1 100644
+index fd9ee5d..672f8e5 100644
 --- a/src/vulkan/runtime/vk_android.c
 +++ b/src/vulkan/runtime/vk_android.c
 @@ -52,6 +52,31 @@
@@ -702,20 +711,7 @@ index fd9ee5d215e..b0195601ef1 100644
  static struct u_gralloc *_gralloc;
  
  static void
-@@ -172,12 +197,24 @@ vk_gralloc_to_drm_explicit_layout(
-    out->pPlaneLayouts = out_layouts;
- 
-    out->drmFormatModifier = info.modifier;
-+   if (out->drmFormatModifier == DRM_FORMAT_MOD_INVALID) {
-+      out->drmFormatModifier =
-+         DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
-+                                 AFBC_FORMAT_MOD_SPARSE |
-+                                 AFBC_FORMAT_MOD_SPLIT |
-+                                 AFBC_FORMAT_MOD_YTR);
-+   }
-    out->drmFormatModifierPlaneCount = info.num_planes;
-    for (size_t i = 0; i < info.num_planes; i++) {
-       out_layouts[i].offset = info.offsets[i];
+@@ -178,6 +203,11 @@ vk_gralloc_to_drm_explicit_layout(
        out_layouts[i].rowPitch = info.strides[i];
     }
  
@@ -727,7 +723,7 @@ index fd9ee5d215e..b0195601ef1 100644
     if (info.drm_fourcc == DRM_FORMAT_YVU420) {
        /* Swap the U and V planes to match the
         * VK_FORMAT_G8_B8_R8_3PLANE_420_UNORM */
-@@ -197,7 +234,19 @@ vk_android_import_anb_memory(struct vk_device *device,
+@@ -197,7 +227,19 @@ vk_android_import_anb_memory(struct vk_device *device,
  {
     assert(anb && anb->handle && anb->handle->numFds > 0);
  
@@ -748,7 +744,31 @@ index fd9ee5d215e..b0195601ef1 100644
  
     /* Query image memory requirements for size and supported memory types */
     VkMemoryRequirements mem_reqs;
-@@ -403,6 +452,12 @@ setup_gralloc0_usage(VkFormat format, VkImageUsageFlags image_usage,
+@@ -292,8 +334,21 @@ vk_android_get_anb_layout(
+       .pixel_stride = native_buffer->stride,
+    };
+ 
+-   return vk_gralloc_to_drm_explicit_layout(&gr_handle, out,
+-                                            out_layouts, max_planes);
++   VkResult result = vk_gralloc_to_drm_explicit_layout(&gr_handle, out,
++                                                       out_layouts, max_planes);
++   if (result != VK_SUCCESS)
++      return result;
++
++   /* On MediaTek, ANB display swapchain buffers use MTK AFBC */
++   if (out->drmFormatModifier == DRM_FORMAT_MOD_INVALID) {
++      out->drmFormatModifier =
++         DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
++                                 AFBC_FORMAT_MOD_SPARSE |
++                                 AFBC_FORMAT_MOD_SPLIT |
++                                 AFBC_FORMAT_MOD_YTR);
++   }
++
++   return VK_SUCCESS;
+ }
+ 
+ VkResult
+@@ -403,6 +458,12 @@ setup_gralloc0_usage(VkFormat format, VkImageUsageFlags image_usage,
     if (!gralloc_usage)
        return VK_ERROR_FORMAT_NOT_SUPPORTED;
  
@@ -761,7 +781,7 @@ index fd9ee5d215e..b0195601ef1 100644
     *out_gralloc_usage = gralloc_usage;
  
     return VK_SUCCESS;
-@@ -609,6 +664,15 @@ vk_common_GetSwapchainGrallocUsage2ANDROID(
+@@ -609,6 +670,15 @@ vk_common_GetSwapchainGrallocUsage2ANDROID(
     if (gralloc_usage & GRALLOC_USAGE_HW_TEXTURE)
        *grallocConsumerUsage |= GRALLOC1_CONSUMER_USAGE_GPU_TEXTURE;
  
@@ -777,7 +797,48 @@ index fd9ee5d215e..b0195601ef1 100644
     /* for front buffer rendering */
     if (swapchainImageUsage & VK_SWAPCHAIN_IMAGE_USAGE_SHARED_BIT_ANDROID)
        *grallocProducerUsage |= vk_android_get_front_buffer_usage();
-@@ -1088,13 +1152,27 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
+@@ -634,8 +704,38 @@ vk_android_get_ahb_layout(
+       .hal_format = description.format,
+    };
+ 
+-   return vk_gralloc_to_drm_explicit_layout(&gr_handle, out,
+-                                            out_layouts, max_planes);
++   VkResult result = vk_gralloc_to_drm_explicit_layout(&gr_handle, out,
++                                                       out_layouts, max_planes);
++   if (result != VK_SUCCESS)
++      return result;
++
++   /* MediaTek gralloc reports DRM_FORMAT_MOD_INVALID for all buffers.
++    * Bitmaps and uploaded textures (e.g. Launcher icons via VkUploader) are CPU-linear.
++    * Forcing AFBC on CPU-accessible or non-framebuffer AHB causes severe pixel tearing
++    * and GPU hardware hang / timeout.
++    */
++   bool is_cpu = (description.usage & (AHARDWAREBUFFER_USAGE_CPU_READ_MASK |
++                                       AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK)) != 0;
++   bool is_fb = (description.usage & (AHARDWAREBUFFER_USAGE_GPU_FRAMEBUFFER |
++                                      AHARDWAREBUFFER_USAGE_COMPOSER_OVERLAY)) != 0;
++
++   if (is_cpu || !is_fb) {
++      mesa_logw("panvk: AHB layout (w=%u h=%u usage=0x%" PRIx64 ") -> FORCE LINEAR (stride=%d)",
++                description.width, description.height,
++                (uint64_t)description.usage, (int)out_layouts[0].rowPitch);
++      out->drmFormatModifier = DRM_FORMAT_MOD_LINEAR;
++   } else if (out->drmFormatModifier == DRM_FORMAT_MOD_INVALID) {
++      mesa_logw("panvk: AHB layout (w=%u h=%u usage=0x%" PRIx64 ") -> MTK AFBC",
++                description.width, description.height,
++                (uint64_t)description.usage);
++      out->drmFormatModifier =
++         DRM_FORMAT_MOD_ARM_AFBC(AFBC_FORMAT_MOD_BLOCK_SIZE_32x8 |
++                                 AFBC_FORMAT_MOD_SPARSE |
++                                 AFBC_FORMAT_MOD_SPLIT |
++                                 AFBC_FORMAT_MOD_YTR);
++   }
++
++   return VK_SUCCESS;
+ }
+ 
+ /* From the Android hardware_buffer.h header:
+@@ -1088,13 +1188,27 @@ vk_common_GetAndroidHardwareBufferPropertiesANDROID(
  
     const native_handle_t *handle = AHardwareBuffer_getNativeHandle(buffer);
     assert(handle && handle->numFds > 0);
@@ -808,7 +869,7 @@ index fd9ee5d215e..b0195601ef1 100644
     if (result != VK_SUCCESS)
        return result;
 diff --git a/src/vulkan/runtime/vk_device.c b/src/vulkan/runtime/vk_device.c
-index 1b422dc8a6c..14a849d194c 100644
+index 1b422dc..14a849d 100644
 --- a/src/vulkan/runtime/vk_device.c
 +++ b/src/vulkan/runtime/vk_device.c
 @@ -28,6 +28,7 @@
@@ -863,7 +924,7 @@ index 1b422dc8a6c..14a849d194c 100644
             timeline_mode_str(device));
  
 diff --git a/src/vulkan/runtime/vk_queue.c b/src/vulkan/runtime/vk_queue.c
-index b6b8ba7e2b4..34aaed3f28f 100644
+index b6b8ba7..34aaed3 100644
 --- a/src/vulkan/runtime/vk_queue.c
 +++ b/src/vulkan/runtime/vk_queue.c
 @@ -25,6 +25,7 @@
@@ -897,7 +958,7 @@ index b6b8ba7e2b4..34aaed3f28f 100644
     if (submit->_signal_points) {
        for (uint32_t i = 0; i < submit->signal_count; i++) {
 diff --git a/src/vulkan/util/vk_physical_device_features_gen.py b/src/vulkan/util/vk_physical_device_features_gen.py
-index 61094b4f4d8..caff150e52d 100644
+index 61094b4..caff150 100644
 --- a/src/vulkan/util/vk_physical_device_features_gen.py
 +++ b/src/vulkan/util/vk_physical_device_features_gen.py
 @@ -216,6 +216,7 @@ TEMPLATE_C = Template(COPYRIGHT + """
