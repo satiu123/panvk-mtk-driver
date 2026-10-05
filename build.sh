@@ -34,7 +34,7 @@ if [ "${SKIP_DEPS:-0}" != "1" ]; then
       python3 python3-pip python3-setuptools python3-wheel ninja-build \
       pkg-config git wget unzip curl patchelf \
       clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libclang-rt-18-dev \
-      libclc-18-dev libclc-dev libllvmspirvlib-18-dev lld-18 lld \
+      libclc-18-dev libllvmspirvlib-18-dev lld-18 lld \
       spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
       libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
       bison flex gettext xsltproc libwayland-dev \

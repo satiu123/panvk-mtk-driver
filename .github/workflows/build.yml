@@ -78,7 +78,7 @@ jobs:
           sudo apt-get install -y \
             ninja-build pkg-config patchelf ccache \
             clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libclang-rt-18-dev \
-            libclc-18-dev libclc-dev libllvmspirvlib-18-dev lld-18 lld \
+            libclc-18-dev libllvmspirvlib-18-dev lld-18 lld \
             spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
             libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
             bison flex gettext xsltproc libwayland-dev zip \
