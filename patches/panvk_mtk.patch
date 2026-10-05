@@ -259,6 +259,27 @@ index 36589235e6f..330feed9e8c 100644
  )
  libpanvk_files += [sha1_h]
  
+diff --git a/src/panfrost/vulkan/panvk_drm_stub.c b/src/panfrost/vulkan/panvk_drm_stub.c
+new file mode 100644
+index 00000000000..f6700ea9039
+--- /dev/null
++++ b/src/panfrost/vulkan/panvk_drm_stub.c
+@@ -0,0 +1,15 @@
++#include <stdint.h>
++#include <sys/ioctl.h>
++#include <drm/drm.h>
++#include <xf86drm.h>
++
++__attribute__((visibility("default")))
++int
++drmCloseBufferHandle(int fd, uint32_t handle)
++{
++   struct drm_gem_close req = {
++      .handle = handle,
++      .pad = 0,
++   };
++   return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &req);
++}
 diff --git a/src/panfrost/vulkan/panvk_android.c b/src/panfrost/vulkan/panvk_android.c
 index 82f9638c8ea..347045ce94c 100644
 --- a/src/panfrost/vulkan/panvk_android.c

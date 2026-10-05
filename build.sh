@@ -98,6 +98,28 @@ else
   echo "    补丁已应用"
 fi
 
+# 确保 panvk_drm_stub.c 存在 (设备 libdrm 缺失 drmCloseBufferHandle stub)
+if [ ! -f "$WORKDIR/mesa/src/panfrost/vulkan/panvk_drm_stub.c" ]; then
+  cat > "$WORKDIR/mesa/src/panfrost/vulkan/panvk_drm_stub.c" <<'EOF'
+#include <stdint.h>
+#include <sys/ioctl.h>
+#include <drm/drm.h>
+#include <xf86drm.h>
+
+__attribute__((visibility("default")))
+int
+drmCloseBufferHandle(int fd, uint32_t handle)
+{
+   struct drm_gem_close req = {
+      .handle = handle,
+      .pad = 0,
+   };
+   return drmIoctl(fd, DRM_IOCTL_GEM_CLOSE, &req);
+}
+EOF
+  echo "    创建 panvk_drm_stub.c"
+fi
+
 # --- 4. 离线编译器 (mesa_clc / panfrost_compile) ----------------------------
 echo "==> [4/6] 构建离线编译器"
 if [ ! -d "$WORKDIR/mesa/build-compiler" ]; then
