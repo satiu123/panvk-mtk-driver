@@ -52,9 +52,9 @@ jobs:
           echo "Rust version: $(rustc --version)"
           echo "Cargo version: $(cargo --version)"
 
-      - name: Cache bindgen binary
+      - name: Restore bindgen cache
         id: cache-bindgen
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: ~/.cargo/bin/bindgen
           key: ${{ runner.os }}-bindgen-0.72.1
@@ -65,15 +65,32 @@ jobs:
           cargo install --locked --version 0.72.1 bindgen-cli
           ~/.cargo/bin/bindgen --version
 
+      - name: Save bindgen cache
+        if: steps.cache-bindgen.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cargo/bin/bindgen
+          key: ${{ runner.os }}-bindgen-0.72.1
+
       - name: Install System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y \
             ninja-build pkg-config patchelf ccache \
             clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libclang-rt-18-dev \
+            libclc-18-dev libclc-dev libllvmspirvlib-18-dev lld-18 lld \
             spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
             libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
-            bison flex gettext xsltproc libwayland-dev zip
+            bison flex gettext xsltproc libwayland-dev zip \
+            python3-zstandard
+
+      - name: Verify Host Tools & Pkg-config
+        run: |
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:/usr/lib/pkgconfig:/usr/lib/llvm-18/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          echo "libclc version: $(pkg-config --modversion libclc)"
+          echo "LLVMSPIRVLib version: $(pkg-config --modversion LLVMSPIRVLib)"
+          echo "llvm-config version: $(/usr/lib/llvm-18/bin/llvm-config --version)"
+          echo "clang version: $(clang-18 --version | head -1)"
 
       - name: Install Python Build Tools & Meson
         run: |
@@ -99,6 +116,7 @@ jobs:
       - name: Build PanVK Driver
         run: |
           export SKIP_DEPS=1
+          export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:/usr/lib/pkgconfig:/usr/lib/llvm-18/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           export MODE="${{ github.event.inputs.build_type || 'release' }}"
           bash build.sh "$MODE"
 

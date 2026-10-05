@@ -33,11 +33,12 @@ if [ "${SKIP_DEPS:-0}" != "1" ]; then
     sudo apt-get install -y \
       python3 python3-pip python3-setuptools python3-wheel ninja-build \
       pkg-config git wget unzip curl patchelf \
-      clang llvm-18-dev libclang-18-dev libclang-cpp18-dev \
+      clang-18 llvm-18-dev libclang-18-dev libclang-cpp18-dev libclang-rt-18-dev \
+      libclc-18-dev libclc-dev libllvmspirvlib-18-dev lld-18 lld \
       spirv-tools glslang-tools libx11-dev libxext-dev libxdamage-dev \
       libxfixes-dev libxrandr-dev libdrm-dev libexpat1-dev zlib1g-dev \
       bison flex gettext xsltproc libwayland-dev \
-      libclang-rt-18-dev python3-mako python3-yaml python3-packaging || true
+      python3-mako python3-yaml python3-packaging python3-zstandard || true
   fi
 
   # 确保 pip 安装最新版 meson (>= 1.7.0 为 Mesa Rust 所需) 及 python 模板依赖
@@ -62,6 +63,7 @@ fi
 
 [ -f "$HOME/.cargo/env" ] && source "$HOME/.cargo/env" || true
 export PATH="$COMPILER_PREFIX/bin:$HOME/.cargo/bin:/usr/lib/llvm-18/bin:$PATH"
+export PKG_CONFIG_PATH="/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:/usr/lib/pkgconfig:/usr/lib/llvm-18/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
 export LIBCLANG_PATH=/usr/lib/llvm-18/lib
 export CLANG_PATH=/usr/lib/llvm-18/bin/clang
 export BINDGEN_EXTRA_CLANG_ARGS="-target aarch64-linux-android --sysroot=$WORKDIR/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/sysroot"
